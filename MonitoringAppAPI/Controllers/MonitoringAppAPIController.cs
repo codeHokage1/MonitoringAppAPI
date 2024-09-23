@@ -201,140 +201,140 @@
 
 
 /// +====== latest one that returns chunks of the data and not all ========
-//using Microsoft.AspNetCore.Http;
-//using Microsoft.AspNetCore.Mvc;
-//using System;
-//using System.IO;
-//using System.Text;
-//using System.Threading.Tasks;
-//using Google.Protobuf;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
+using Google.Protobuf;
 
-//namespace MonitoringAppAPI.Controllers
-//{
-//    [Route("api/[controller]")]
-//    [ApiController]
-//    public class MonitoringAppAPIController : ControllerBase
-//    {
-//        private readonly ILogger<MonitoringAppAPIController> _logger;
-//        public MonitoringAppAPIController(ILogger<MonitoringAppAPIController> logger)
-//        {
-//            _logger = logger;
-//        }
+namespace MonitoringAppAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class MonitoringAppAPIController : ControllerBase
+    {
+        private readonly ILogger<MonitoringAppAPIController> _logger;
+        public MonitoringAppAPIController(ILogger<MonitoringAppAPIController> logger)
+        {
+            _logger = logger;
+        }
 
-//        //[HttpPost("traces")]
-//        //[Consumes("application/x-protobuf")]
-//        //public async Task<IActionResult> ReceiveTraces()
-//        //{
-//        //    _logger.LogInformation("TRACE ENDPOINT HIT!");
-//        //    var data = await ReadRequestBody();
-//        //    _logger.LogInformation("Received trace data length: {TraceDataLength}", data.Length);
-//        //    return Ok();
-//        //}
+        [HttpPost("traces")]
+        [Consumes("application/x-protobuf")]
+        public async Task<IActionResult> ReceiveTraces()
+        {
+            _logger.LogInformation("TRACE ENDPOINT HIT!");
+            var data = await ReadRequestBody();
+            _logger.LogInformation("Received trace data length: {TraceDataLength}", data.Length);
+            return Ok();
+        }
 
-//        //[HttpPost("metrics")]
-//        //[Consumes("application/x-protobuf")]
-//        //public async Task<IActionResult> ReceiveMetrics()
-//        //{
-//        //    _logger.LogInformation("METRICS ENDPOINT HIT!");
-//        //    var data = await ReadRequestBody();
-//        //    ProcessMetrics(data);
-//        //    return Ok();
-//        //}
+        [HttpPost("metrics")]
+        [Consumes("application/x-protobuf")]
+        public async Task<IActionResult> ReceiveMetrics()
+        {
+            _logger.LogInformation("METRICS ENDPOINT HIT!");
+            var data = await ReadRequestBody();
+            ProcessMetrics(data);
+            return Ok();
+        }
 
-//        //[HttpPost("logs")]
-//        //[Consumes("application/x-protobuf")]
-//        //public async Task<IActionResult> ReceiveLogs()
-//        //{
-//        //    _logger.LogInformation("LOGS ENDPOINT HIT!");
-//        //    var data = await ReadRequestBody();
-//        //    ProcessLogs(data);
-//        //    return Ok();
-//        //}
+        [HttpPost("logs")]
+        [Consumes("application/x-protobuf")]
+        public async Task<IActionResult> ReceiveLogs()
+        {
+            _logger.LogInformation("LOGS ENDPOINT HIT!");
+            var data = await ReadRequestBody();
+            ProcessLogs(data);
+            return Ok();
+        }
 
-//        //private async Task<byte[]> ReadRequestBody()
-//        //{
-//        //    using var ms = new MemoryStream();
-//        //    await Request.Body.CopyToAsync(ms);
-//        //    return ms.ToArray();
-//        //}
+        private async Task<byte[]> ReadRequestBody()
+        {
+            using var ms = new MemoryStream();
+            await Request.Body.CopyToAsync(ms);
+            return ms.ToArray();
+        }
 
-//        /// ===== Returns body in Binary format =============
-//        //private void ProcessMetrics(byte[] data)
-//        //{
-//        //    try
-//        //    {
-//        //        // Here you would typically decode the protobuf message
-//        //        // Since we can't use ExportMetricsServiceRequest, we'll just log some basic info
-//        //        _logger.LogInformation("Received metrics data of length: {Length}", data.Length);
+        /// ===== Returns body in Binary format =============
+        //private void ProcessMetrics(byte[] data)
+        //{
+        //    try
+        //    {
+        //        // Here you would typically decode the protobuf message
+        //        // Since we can't use ExportMetricsServiceRequest, we'll just log some basic info
+        //        _logger.LogInformation("Received metrics data of length: {Length}", data.Length);
 
-//        //        // You could implement custom logic here to parse the protobuf data
-//        //        // and extract the metrics you're interested in
+        //        // You could implement custom logic here to parse the protobuf data
+        //        // and extract the metrics you're interested in
 
-//        //        // For demonstration, let's just log the first few bytes
-//        //        var sampleData = BitConverter.ToString(data.Take(20).ToArray());
-//        //        _logger.LogInformation("Sample of metric data: {SampleData}", sampleData);
-//        //    }
-//        //    catch (Exception ex)
-//        //    {
-//        //        _logger.LogError(ex, "Error processing metrics data");
-//        //    }
-//        //}
+        //        // For demonstration, let's just log the first few bytes
+        //        var sampleData = BitConverter.ToString(data.Take(20).ToArray());
+        //        _logger.LogInformation("Sample of metric data: {SampleData}", sampleData);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error processing metrics data");
+        //    }
+        //}
 
-//        //private void ProcessLogs(byte[] data)
-//        //{
-//        //    try
-//        //    {
-//        //        // Similar to ProcessMetrics, but for logs
-//        //        _logger.LogInformation("Received logs data of length: {Length}", data.Length);
+        //private void ProcessLogs(byte[] data)
+        //{
+        //    try
+        //    {
+        //        // Similar to ProcessMetrics, but for logs
+        //        _logger.LogInformation("Received logs data of length: {Length}", data.Length);
 
-//        //        // You could implement custom logic here to parse the protobuf data
-//        //        // and extract the logs you're interested in
+        //        // You could implement custom logic here to parse the protobuf data
+        //        // and extract the logs you're interested in
 
-//        //        // For demonstration, let's just log the first few bytes
-//        //        var sampleData = BitConverter.ToString(data.Take(20).ToArray());
-//        //        _logger.LogInformation("Sample of log data: {SampleData}", sampleData);
-//        //    }
-//        //    catch (Exception ex)
-//        //    {
-//        //        _logger.LogError(ex, "Error processing logs data");
-//        //    }
-//        //}
+        //        // For demonstration, let's just log the first few bytes
+        //        var sampleData = BitConverter.ToString(data.Take(20).ToArray());
+        //        _logger.LogInformation("Sample of log data: {SampleData}", sampleData);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error processing logs data");
+        //    }
+        //}
 
 
-//        /// ===== Return body in String format ==============
-//        //private void ProcessMetrics(byte[] data)
-//        //{
-//        //    try
-//        //    {
-//        //        // Log the length of the data
-//        //        _logger.LogInformation("Received metrics data of length: {Length}", data.Length);
+        /// ===== Return body in String format ==============
+        private void ProcessMetrics(byte[] data)
+        {
+            try
+            {
+                // Log the length of the data
+                _logger.LogInformation("Received metrics data of length: {Length}", data.Length);
 
-//        //        // Convert the first part of the data to a string (assuming it contains ASCII characters)
-//        //        var sampleDataAsString = Encoding.UTF8.GetString(data.Take(100).ToArray());  // Take the first 100 bytes
-//        //        _logger.LogInformation("Sample of metric data (as string): {SampleData}", sampleDataAsString);
-//        //    }
-//        //    catch (Exception ex)
-//        //    {
-//        //        _logger.LogError(ex, "Error processing metrics data");
-//        //    }
-//        //}
+                // Convert the first part of the data to a string (assuming it contains ASCII characters)
+                var sampleDataAsString = Encoding.UTF8.GetString(data.Take(100).ToArray());  // Take the first 100 bytes
+                _logger.LogInformation("Sample of metric data (as string): {SampleData}", sampleDataAsString);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing metrics data");
+            }
+        }
 
-//        //private void ProcessLogs(byte[] data)
-//        //{
-//        //    try
-//        //    {
-//        //        // Log the length of the data
-//        //        _logger.LogInformation("Received logs data of length: {Length}", data.Length);
+        private void ProcessLogs(byte[] data)
+        {
+            try
+            {
+                // Log the length of the data
+                _logger.LogInformation("Received logs data of length: {Length}", data.Length);
 
-//        //        // Convert the first part of the data to a string (assuming it contains ASCII characters)
-//        //        var sampleDataAsString = Encoding.UTF8.GetString(data.Take(100).ToArray());  // Take the first 100 bytes
-//        //        _logger.LogInformation("Sample of log data (as string): {SampleData}", sampleDataAsString);
-//        //    }
-//        //    catch (Exception ex)
-//        //    {
-//        //        _logger.LogError(ex, "Error processing logs data");
-//        //    }
-//        //}
+                // Convert the first part of the data to a string (assuming it contains ASCII characters)
+                var sampleDataAsString = Encoding.UTF8.GetString(data.Take(100).ToArray());  // Take the first 100 bytes
+                _logger.LogInformation("Sample of log data (as string): {SampleData}", sampleDataAsString);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing logs data");
+            }
+        }
 
-//    }
-//}
+    }
+}
