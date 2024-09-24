@@ -208,6 +208,11 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using MonitoringAppAPI.Services;
+using MonitoringAppAPI.Data;
+using Microsoft.EntityFrameworkCore;
+using MonitoringAppAPI.Models;
+using MonitoringAppAPI.Models.DTOs;
 
 namespace MonitoringAppAPI.Controllers
 {
@@ -216,9 +221,43 @@ namespace MonitoringAppAPI.Controllers
     public class MonitoringAppAPIController : ControllerBase
     {
         private readonly ILogger<MonitoringAppAPIController> _logger;
-        public MonitoringAppAPIController(ILogger<MonitoringAppAPIController> logger)
+        private readonly IRedisService _redisService;
+        private readonly AppDBContext _appDBContext;
+
+        public MonitoringAppAPIController(ILogger<MonitoringAppAPIController> logger, RedisService redisService, AppDBContext appDBContext)
         {
             _logger = logger;
+            _redisService = redisService;
+            _appDBContext = appDBContext;
+        }
+
+        // set up route for getting all apps
+        [HttpGet("apps")]
+        public async Task<IActionResult> GetAllApps()
+        {
+            var apps = await _appDBContext.MonitoredApps.ToListAsync();
+            return Ok(apps);
+        }
+
+        // route for adding app
+        [HttpPost("apps")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> AddApp(AddAppDTO app)
+        {
+            var appToAdd = new MonitoredApp
+            {
+                AppName = app.AppName
+            };
+            var newApp = await _appDBContext.MonitoredApps.AddAsync(appToAdd);
+            await _appDBContext.SaveChangesAsync();
+            // convert to AppDTO
+            var appToSend = new AppDTO()
+            {
+                ID = newApp.Entity.ID,
+                AppName = newApp.Entity.AppName,
+            };
+            
+            return Ok(appToSend);
         }
 
         [HttpPost("traces")]
@@ -312,6 +351,7 @@ namespace MonitoringAppAPI.Controllers
                 // Convert the first part of the data to a string (assuming it contains ASCII characters)
                 var sampleDataAsString = Encoding.UTF8.GetString(data.Take(100).ToArray());  // Take the first 100 bytes
                 _logger.LogInformation("Sample of metric data (as string): {SampleData}", sampleDataAsString);
+                StoreLogInRedis(sampleDataAsString);
             }
             catch (Exception ex)
             {
@@ -329,12 +369,20 @@ namespace MonitoringAppAPI.Controllers
                 // Convert the first part of the data to a string (assuming it contains ASCII characters)
                 var sampleDataAsString = Encoding.UTF8.GetString(data.Take(100).ToArray());  // Take the first 100 bytes
                 _logger.LogInformation("Sample of log data (as string): {SampleData}", sampleDataAsString);
+                StoreLogInRedis(sampleDataAsString);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing logs data");
             }
         }
+
+        private async void StoreLogInRedis(string logData)
+        {
+            string key = $"log:{Guid.NewGuid()}";  // Unique key for the log
+            await _redisService.SaveTelemetryDataAsync(key, logData, TimeSpan.FromHours(1));  // Store with TTL of 1 hour
+        }
+
 
     }
 }

@@ -1,36 +1,10 @@
-//using Microsoft.AspNetCore.StaticFiles;
-
-//var builder = WebApplication.CreateBuilder(args);
-
-//// Add services to the container.
-
-//builder.Services.AddControllers();
-//// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-//builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen();
-
-//var app = builder.Build();
-
-//// Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger();
-//    app.UseSwaggerUI();
-//}
-//app.UseHttpsRedirection();
-
-//app.UseAuthorization();
-
-//app.MapControllers();
-
-//app.Run();
-
-
-
-
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using MonitoringAppAPI.Formatters; // Assuming you'll create this namespace for the ProtobufInputFormatter
+using MonitoringAppAPI.Formatters;
+using StackExchange.Redis;
+using Microsoft.EntityFrameworkCore;
+using MonitoringAppAPI.Data;
+using MonitoringAppAPI.Services; // Assuming you'll create this namespace for the ProtobufInputFormatter
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +18,20 @@ builder.Services.AddControllers(options =>
 builder.Services.Configure<KestrelServerOptions>(options =>
 {
     options.Limits.MaxRequestBodySize = 52428800; // 50MB
+});
+
+// Redis configuration
+var redisConnectionString = builder.Configuration.GetSection("Redis")["ConnectionString"];
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
+
+//builder.Services.AddScoped<IRedisService, RedisService>();
+builder.Services.AddSingleton<RedisService>();
+
+
+// Add databasecontext
+builder.Services.AddDbContext<AppDBContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
 // Add CORS if necessary
