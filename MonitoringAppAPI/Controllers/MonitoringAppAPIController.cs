@@ -213,6 +213,7 @@ using MonitoringAppAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using MonitoringAppAPI.Models;
 using MonitoringAppAPI.Models.DTOs;
+using System.Text.Json;
 
 namespace MonitoringAppAPI.Controllers
 {
@@ -237,6 +238,29 @@ namespace MonitoringAppAPI.Controllers
         {
             var apps = await _appDBContext.MonitoredApps.ToListAsync();
             return Ok(apps);
+        }
+
+        // get telemetry data for an app
+        [HttpGet("apps/{id}")]
+        public async Task<IActionResult> GetAppData(Guid id)
+        {
+            var app = await _appDBContext.MonitoredApps.FindAsync(id);
+            if (app == null)
+            {
+                _logger.LogInformation("No app found with ID {AppID}", id);
+                return NotFound();
+            }
+
+            var key = id.ToString().ToUpper();
+            _logger.LogInformation("Getting telemetry data for app with ID {AppID}", key);
+            var telemetryData = await _redisService.GetTelemetryDataAsync2(key);
+            if (telemetryData == null)
+            {
+                _logger.LogInformation("No telemetry data found for app with ID {AppID}", id);
+                return NotFound();
+            }
+
+            return Ok(telemetryData);
         }
 
         // route for adding app
@@ -351,7 +375,17 @@ namespace MonitoringAppAPI.Controllers
                 // Convert the first part of the data to a string (assuming it contains ASCII characters)
                 var sampleDataAsString = Encoding.UTF8.GetString(data.Take(100).ToArray());  // Take the first 100 bytes
                 _logger.LogInformation("Sample of metric data (as string): {SampleData}", sampleDataAsString);
-                StoreLogInRedis(sampleDataAsString);
+
+                // create an object to store in redis
+                var MetricData = new RedisData
+                {
+                    Type = "metrics",
+                    Data = sampleDataAsString
+                };
+
+                // convert object to string
+                var MetricDataString = JsonSerializer.Serialize(MetricData);
+                StoreDataInRedis2(MetricDataString);
             }
             catch (Exception ex)
             {
@@ -369,7 +403,17 @@ namespace MonitoringAppAPI.Controllers
                 // Convert the first part of the data to a string (assuming it contains ASCII characters)
                 var sampleDataAsString = Encoding.UTF8.GetString(data.Take(100).ToArray());  // Take the first 100 bytes
                 _logger.LogInformation("Sample of log data (as string): {SampleData}", sampleDataAsString);
-                StoreLogInRedis(sampleDataAsString);
+
+                // create an object to store in redis
+                var LogData = new RedisData
+                {
+                    Type = "logs",
+                    Data = sampleDataAsString
+                };
+
+                // convert object to string
+                var LogDataString = JsonSerializer.Serialize(LogData);
+                StoreDataInRedis2(LogDataString);
             }
             catch (Exception ex)
             {
@@ -377,12 +421,34 @@ namespace MonitoringAppAPI.Controllers
             }
         }
 
-        private async void StoreLogInRedis(string logData)
+        private async void StoreDataInRedis(string logData)
         {
-            string key = $"log:{Guid.NewGuid()}";  // Unique key for the log
+            var key = "18BB9789-D0C7-42A4-AFE0-08DCDC812D04";
+            _logger.LogInformation("Storing log data in Redis for app with ID {AppID}", key);
+            _logger.LogInformation("Data to store: {LogData}", logData);
+
             await _redisService.SaveTelemetryDataAsync(key, logData, TimeSpan.FromHours(1));  // Store with TTL of 1 hour
         }
 
+        private async void StoreDataInRedis2(string logData)
+        {
+            var baseId = "18BB9789-D0C7-42A4-AFE0-08DCDC812D04";
+            var randomNumber = Guid.NewGuid().ToString(); // or you can use a random number generator
+            var key = $"{baseId}:{randomNumber}"; // Create a unique key
+            _logger.LogInformation("Storing log data in Redis with key {Key}", key);
+            _logger.LogInformation("Data to store: {LogData}", logData);
 
+            await _redisService.SaveTelemetryDataAsync(key, logData, TimeSpan.FromHours(1)); // Store with TTL of 1 hour
+        }
+
+
+
+    }
+
+    public class RedisData
+    {
+        public string Type { get; set; }
+        public string Data { get; set; }
+        public DateTime TimeStored { get; set; } = DateTime.Now;
     }
 }
